@@ -2,7 +2,7 @@
 
 //index.php
 
-$connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "");
+$connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "root");
 
 $message = '';
 
@@ -32,14 +32,14 @@ if(isset($_POST["add_to_basket"]))
 			if($cart_data[$keys]["item_id"] == $_POST["hidden_id"])
 			{
 				$cart_data[$keys]["item_quantity"] = $cart_data[$keys]["item_quantity"] + $_POST["quantity"];
-                echo("q1");
-                var_dump("qauntity : " + $cart_data[$keys]["item_stock"]);
-                var_dump("qantity 2 : " + $_POST["quantity"]);
-                $num = $cart_data[$keys]["item_stock"] - $_POST["quantity"] ;
+                // Updating the stock qauntity on Front end as well as in Database.
+				//var_dump($_POST["hidden_stock"]);
+                $_POST["hidden_stock"] = $_POST["hidden_stock"] - $_POST["quantity"] ;
+                $num = $_POST["hidden_stock"];
                 $id = $_POST["hidden_id"];
-				$query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
+                $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
 
-				$connect->exec($query);
+                $connect->exec($query);
 			}
 		}
 
@@ -48,6 +48,17 @@ if(isset($_POST["add_to_basket"]))
 	else
 	{
 	    echo("ELSE ");
+
+	    //var_dump($item_array);
+        //var_dump($_POST["hidden_stock"]);
+        $_POST["hidden_stock"] = $_POST["hidden_stock"] - $_POST["quantity"] ;
+        $num = $_POST["hidden_stock"];
+        $id = $_POST["hidden_id"];
+        $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
+
+        $connect->exec($query);
+
+
 		$item_array = array(
 			'item_id'			=>	$_POST["hidden_id"],
 			'item_name'			=>	$_POST["hidden_name"],
@@ -56,13 +67,6 @@ if(isset($_POST["add_to_basket"]))
 			'item_quantity'		=>	$_POST["quantity"]
 		);
 		$cart_data[] = $item_array;
-
-        var_dump($item_array["item_stock"]);
-		$num = $item_array["item_stock"] - $_POST["quantity"] ;
-        $id = $_POST["hidden_id"];
-        $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
-
-        $connect->exec($query);
 
 		/*var_dump($item_array);
 	    //Storing the basket data into 'basket' table
@@ -87,7 +91,7 @@ if(isset($_POST["add_to_basket"]))
 	//$basket_id++;
 	$item_data = json_encode($cart_data);
 	setcookie('shopping_cart', $item_data, time() + (86400 * 30));
-	//header("location:index.php?success=1");
+	header("location:index.php?success=1");
 }
 
 if(isset($_GET["action"]))
@@ -191,7 +195,7 @@ if(isset($_GET["clearall"]))
           </div>
         </nav>
 		<br />
-		<div class="container">
+		<div class="container" style="background-color:#ffffff; border-radius:5px; padding:16px;" align="center">
 			<br />
 			<h3 align="center">Shopping Cart</h3><br />
 			<br /><br />
