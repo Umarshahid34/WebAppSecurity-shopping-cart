@@ -32,6 +32,14 @@ if(isset($_POST["add_to_basket"]))
 			if($cart_data[$keys]["item_id"] == $_POST["hidden_id"])
 			{
 				$cart_data[$keys]["item_quantity"] = $cart_data[$keys]["item_quantity"] + $_POST["quantity"];
+                echo("q1");
+                var_dump("qauntity : " + $cart_data[$keys]["item_stock"]);
+                var_dump("qantity 2 : " + $_POST["quantity"]);
+                $num = $cart_data[$keys]["item_stock"] - $_POST["quantity"] ;
+                $id = $_POST["hidden_id"];
+				$query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
+
+				$connect->exec($query);
 			}
 		}
 
@@ -49,7 +57,14 @@ if(isset($_POST["add_to_basket"]))
 		);
 		$cart_data[] = $item_array;
 
-		var_dump($item_array);
+        var_dump($item_array["item_stock"]);
+		$num = $item_array["item_stock"] - $_POST["quantity"] ;
+        $id = $_POST["hidden_id"];
+        $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
+
+        $connect->exec($query);
+
+		/*var_dump($item_array);
 	    //Storing the basket data into 'basket' table
         try
         {
@@ -57,21 +72,22 @@ if(isset($_POST["add_to_basket"]))
             $connect->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $itemID = (int)$item_array['item_id'];
             $itemQuantity = (int)$item_array['item_quantity'];
-            $query = "INSERT INTO basket (id_items , basket_quantity, id_cookie) VALUES ($itemID, $itemQuantity, 'shopping_cart')";
+            $item_data = (int)$item_array['item_data'];
+            $query = "INSERT INTO basket (id_items , basket_quantity, id_cookie) VALUES ($itemID, $itemQuantity, $item_data)";
             $connect->exec($query);
             echo "New record created successfully";
         }
         catch(PDOException $e)
         {
             echo $query . "<br>" . $e->getMessage();
-        }
+        }*/
 
 	}
 
-	$basket_id++;
+	//$basket_id++;
 	$item_data = json_encode($cart_data);
 	setcookie('shopping_cart', $item_data, time() + (86400 * 30));
-	header("location:index.php?success=1");
+	//header("location:index.php?success=1");
 }
 
 if(isset($_GET["action"]))
