@@ -1,17 +1,25 @@
-<?php 
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+<?php
 
+include 'Utilities.php';
 //index.php
 
 $connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "root");
 
 $message = '';
-
+$shopping_cart = '';
 $basket_id = 1;
+
 
 if(isset($_POST["add_to_basket"]))
 {
-	if(isset($_COOKIE["shopping_cart"]))
+    //var_dump($_COOKIE['shopping_cart']);
+    /*$cookie_data = stripslashes($_COOKIE['shopping_cart']);
+    $cart_data = json_decode($cookie_data, true);
+    var_dump($cart_data['item_Cookie_id']);*/
+	if(isset($_COOKIE['shopping_cart']))
 	{
+	    var_dump('1');
 		$cookie_data = stripslashes($_COOKIE['shopping_cart']);
         //var_dump($_COOKIE['shopping_cart']);
 		$cart_data = json_decode($cookie_data, true);
@@ -19,35 +27,70 @@ if(isset($_POST["add_to_basket"]))
 	}
 	else
 	{
-		$cart_data = array();
+        var_dump('2');
+        $shopping_cart =  (string)md5(openssl_random_pseudo_bytes(32));
+		$cart_data = array(
+		    'item_Cookie_id'			=>	$shopping_cart
+		);
 	}
 
 	$item_id_list = array_column($cart_data, 'item_id');
 
 	if(in_array($_POST["hidden_id"], $item_id_list))
 	{
-	    echo("IF ");
+	    var_dump('3');
 		foreach($cart_data as $keys => $values)
 		{
-			if($cart_data[$keys]["item_id"] == $_POST["hidden_id"])
-			{
-				$cart_data[$keys]["item_quantity"] = $cart_data[$keys]["item_quantity"] + $_POST["quantity"];
-                // Updating the stock qauntity on Front end as well as in Database.
-				//var_dump($_POST["hidden_stock"]);
-                $_POST["hidden_stock"] = $_POST["hidden_stock"] - $_POST["quantity"] ;
-                $num = $_POST["hidden_stock"];
-                $id = $_POST["hidden_id"];
-                $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
+		    if($values != $cart_data['item_Cookie_id'])
+            {
+                if($cart_data[$keys]["item_id"] == $_POST["hidden_id"])
+                {
+                    //if($_POST["hidden_stock"] > $cart_data[$keys]["item_quantity"])
+                    {
+                        var_dump($cart_data);
+                        $cart_data[$keys]["item_quantity"] = $cart_data[$keys]["item_quantity"] + $_POST["quantity"];
+                        // Updating the stock qauntity on Front end as well as in Database.
+                        var_dump($_POST["hidden_stock"]);
+                        $_POST["hidden_stock"] = $_POST["hidden_stock"] - $_POST["quantity"] ;
+                        var_dump($_POST["hidden_stock"]);
+                        $cart_data[$keys]["item_stock"] = $_POST["hidden_stock"];
+                        $num = $_POST["hidden_stock"];
+                        $id = $_POST["hidden_id"];
+                        $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
+                        $connect->exec($query);
+                        var_dump($cart_data);
+                        // updating the basket Info
+                        //var_dump($id);
+                        $query = "SELECT basket_quantity FROM basket WHERE id_items = $id";
+                        $statement = $connect->prepare($query);
 
-                $connect->exec($query);
-			}
+                        $statement->execute();
+                        $result1 = $statement->fetchAll();
+                        //var_dump($result1);
+                        $quantity = (int)$result1[0]['basket_quantity'] + $_POST["quantity"];
+                        var_dump($quantity);
+                        $query = "UPDATE basket SET basket_quantity = $quantity WHERE id_items = $id";
+                        $connect->exec($query);
+
+                    }
+                    /*else
+                    {
+                        var_dump("javascriot");
+                         echo "<script type='text/javascript'>
+                                        alert('JavaScript is awesome!');
+                               </script>";
+
+                        header("location:index.php?outOfStock=1");
+                    }*/
+                }
+            }
 		}
 
 
 	}
 	else
 	{
-	    echo("ELSE ");
+	   var_dump('4');
 
 	    //var_dump($item_array);
         //var_dump($_POST["hidden_stock"]);
@@ -55,7 +98,6 @@ if(isset($_POST["add_to_basket"]))
         $num = $_POST["hidden_stock"];
         $id = $_POST["hidden_id"];
         $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
-
         $connect->exec($query);
 
 
@@ -67,30 +109,25 @@ if(isset($_POST["add_to_basket"]))
 			'item_quantity'		=>	$_POST["quantity"]
 		);
 		$cart_data[] = $item_array;
-
-		/*var_dump($item_array);
+		var_dump($cart_data);
 	    //Storing the basket data into 'basket' table
-        try
-        {
-            //setting attributes for Exception handling
-            $connect->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
             $itemID = (int)$item_array['item_id'];
             $itemQuantity = (int)$item_array['item_quantity'];
-            $item_data = (int)$item_array['item_data'];
-            $query = "INSERT INTO basket (id_items , basket_quantity, id_cookie) VALUES ($itemID, $itemQuantity, $item_data)";
+            $item_data = $cart_data['item_Cookie_id'];
+            var_dump($item_data);
+            $query = "INSERT INTO basket (id_items , basket_quantity, id_cookie) VALUES ($itemID, $itemQuantity, '$item_data')";
+            var_dump($query);
             $connect->exec($query);
             echo "New record created successfully";
-        }
-        catch(PDOException $e)
-        {
-            echo $query . "<br>" . $e->getMessage();
-        }*/
-
 	}
 
 	//$basket_id++;
 	$item_data = json_encode($cart_data);
-	setcookie('shopping_cart', $item_data, time() + (86400 * 30));
+	//var_dump($cart_data['item_Cookie_id']);
+	//var_dump("shopping_cart");
+    setcookie('shopping_cart', $item_data, time() + (86400 * 30));
+	//var_dump($_POST["hidden_Cookie_id"]);
 	header("location:index.php?success=1");
 }
 
@@ -102,29 +139,66 @@ if(isset($_GET["action"]))
 		$cart_data = json_decode($cookie_data, true);
 		foreach($cart_data as $keys => $values)
 		{
-			if($cart_data[$keys]['item_id'] == $_GET["id"])
-			{
-				unset($cart_data[$keys]);
-				$item_data = json_encode($cart_data);
-				setcookie("shopping_cart", $item_data, time() + (86400 * 30));
-				header("location:index.php?remove=1");
-			}
+		     if($values != $cart_data['item_Cookie_id'])
+             {
+                if($cart_data[$keys]['item_id'] == $_GET["id"])
+                {
+                    //var_dump("Aya");
+                    $cart_data[$keys]['item_stock'] = $cart_data[$keys]["item_stock"] + $cart_data[$keys]["item_quantity"] ;
+                    $num = $cart_data[$keys]['item_stock'];
+                    $id = $cart_data[$keys]['item_id'];
+                    $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
+                    $connect->exec($query);
+
+                    unset($cart_data[$keys]);
+                    $item_data = json_encode($cart_data);
+                    setcookie('shopping_cart', $item_data, time() + (86400 * 30));
+
+                    // Deleting from the basket Table .
+                    $query = "DELETE FROM basket WHERE id_items = $id";
+                    $connect->exec($query);
+
+                    header("location:index.php?remove=1");
+                }
+             }
 		}
 	}
 	if($_GET["action"] == "clear")
 	{
-		setcookie("shopping_cart", "", time() - 3600);
-		header("location:index.php?clearall=1");
+	    $cookie_data = stripslashes($_COOKIE['shopping_cart']);
+    	$cart_data = json_decode($cookie_data, true);
+	    foreach($cart_data as $keys => $values)
+        {
+            if($values != $cart_data['item_Cookie_id'])
+            {
+                var_dump($cart_data);
+                var_dump($cart_data[$keys]["item_stock"]);
+                var_dump($cart_data[$keys]["item_quantity"]);
+                $cart_data[$keys]['item_stock'] = $cart_data[$keys]["item_stock"] + $cart_data[$keys]["item_quantity"] ;
+                $num = $cart_data[$keys]['item_stock'];
+                $id = $cart_data[$keys]['item_id'];
+                $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
+                $connect->exec($query);
+
+                setcookie('shopping_cart', "", time() - 3600);
+                header("location:index.php?clearall=1");
+            }
+		}
+		// Deleting from the basket Table .
+		$query = "DELETE FROM basket";
+        $connect->exec($query);
 	}
+
 	if($_GET["action"] == "checkout")
-    	{
-    		setcookie("shopping_cart", "", time() - 3600);
-    		header("location:index.php?clearall=1");
-    	}
+    {
+        setcookie('shopping_cart', "", time() - 3600);
+        header("location:index.php?checkout=1");
+    }
 }
 
 if(isset($_GET["success"]))
 {
+
 	$message = '
 	<div class="alert alert-success alert-dismissible">
 	  	<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
@@ -133,8 +207,20 @@ if(isset($_GET["success"]))
 	';
 }
 
+if(isset($_GET["outOfStock"]))
+{
+
+	$message = '
+	<div class="alert alert-warning alert-dismissible">
+	  	<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+	  	Please Enter With in Stock Limit
+	</div>
+	';
+}
+
 if(isset($_GET["remove"]))
 {
+
 	$message = '
 	<div class="alert alert-success alert-dismissible">
 		<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
@@ -152,8 +238,20 @@ if(isset($_GET["clearall"]))
 	';
 }
 
+function updateStockOnAddBasketButton(){
+
+}
+
+function updateStockOnRemoveButton(){
+
+}
+
+
+
 
 ?>
+
+
 <!DOCTYPE html>
 <html>
 	<head>
@@ -222,10 +320,11 @@ if(isset($_GET["clearall"]))
                             <div style="color:blue">
 						        <p class="">In Stock: <?php echo $row["item_stock"]; ?></p>
                             </div>
+
 						<input type="text" name="quantity" value="1" class="form-control" />
 						<input type="hidden" name="hidden_name" value="<?php echo $row["item_name"]; ?>" />
 						<input type="hidden" name="hidden_price" value="<?php echo $row["item_price"]; ?>" />
-						<input type="hidden" name="hidden_stock" value="<?php echo $row["item_stock"]; ?>" />
+						<input type="hidden" name="hidden_stock"  value="<?php echo $row["item_stock"]; ?>" class="stock" />
 						<input type="hidden" name="hidden_id" value="<?php echo $row["item_id"]; ?>" />
 						<input type="submit" name="add_to_basket" style="margin-top:5px;" class="btn btn-info" value="Add to Basket" />
 					</div>
@@ -253,13 +352,15 @@ if(isset($_GET["clearall"]))
                         <th width="5%">Action</th>
                     </tr>
                 <?php
-                if(isset($_COOKIE["shopping_cart"]))
+                if(isset($_COOKIE['shopping_cart']))
                 {
                     $total = 0;
                     $cookie_data = stripslashes($_COOKIE['shopping_cart']);
                     $cart_data = json_decode($cookie_data, true);
                     foreach($cart_data as $keys => $values)
                     {
+                        if($values != $cart_data['item_Cookie_id'])
+                         {
                 ?>
                     <tr>
                         <td><?php echo $values["item_name"]; ?></td>
@@ -271,6 +372,7 @@ if(isset($_GET["clearall"]))
 
                 <?php
                         $total = $total + ($values["item_quantity"] * $values["item_price"]);
+                        }
                     }
                 ?>
                     <tr>
@@ -280,8 +382,8 @@ if(isset($_GET["clearall"]))
                     </tr>
                     <tr>
                         <td colspan="5" align="center">
-                            <a href="index.php?action=checkout&id=<?php echo $values["item_id"]; ?>">
-                            <form method="POST" action="Register.php?action=checkout$id=<?php echo $values["item_id"]; ?>">
+                            <a href="index.php?action=checkout">
+                            <form method="POST" action="Register.php?action=checkout?>">
                                 <input type="submit" name="checkOut" style="margin-top:5px;" class="btn btn-success" value="CheckOut Order" />
                             </form>
                             </a>
@@ -304,3 +406,22 @@ if(isset($_GET["clearall"]))
 		<br />
 	</body>
 </html>
+
+<script type="text/javascript">
+$(document).ready(function(){
+    var quantity_field = $('.form-control');
+    var stock_field = $('.stock');
+    var stock_field = <?php echo json_encode($cart_data['']); ?>;
+
+    //$cookie_data = stripslashes($_COOKIE['shopping_cart']);
+    //$cart_data = json_decode($cookie_data, true);
+    alert(stock_field);
+    $(quantity_field).change(function(){
+        alert( stock_field.value);
+        alert(this.value);
+        if(this.value > stock_field.value){
+            alert("We have maximum " + stock_field.value + "items in stock");
+        }
+    });
+});
+</script>
