@@ -1,18 +1,5 @@
 <?php
     $connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "root");
-    //session_start();
-
-    //Updating the personal information for the User
-    if(isset($_POST["next"]))
-    {
-        $name = $_POST['name'];
-        $email = $_POST['email'];
-        $address = $_POST['address'];
-        $id = $_SESSION['id_user'];
-        var_dump($id);
-        $query = "UPDATE users SET user_name = '$name', user_email = '$email', user_address = '$address' WHERE user_id = $id";
-        $connect->exec($query);
-    }
 
     include "views/includes/header.php";
 ?>
