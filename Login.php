@@ -1,11 +1,19 @@
 <?php
 // Initialize the session
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+    //var_dump ("aya");
+}
+
+if(isset($_SESSION["id_user"]))
+{
+    header("location: CheckOut.php");
+}
 
 // Check if the user is already logged in, if yes then redirect him to welcome page
-if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true){
-    header("location: welcome.php");
-    exit;
+if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] == true){
+    header("location: CheckOut.php");
+    //exit;
 }
 
 // Include config file

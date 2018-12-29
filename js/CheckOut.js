@@ -93,11 +93,13 @@ function SubmitPersonalInfoData() {
 }
 
 function SubmitPaymentMethodData(){
-    var rates = document.getElementsByName('rate');
+    var rates = document.getElementsByName('customRadio');
     var rate_value;
     for(var i = 0; i < rates.length; i++){
         if(rates[i].checked){
             rate_value = rates[i].value;
+            alert(rate_value);
+            $_SESSION['paymentMethod'] = rate_value;
         }
     }
 }

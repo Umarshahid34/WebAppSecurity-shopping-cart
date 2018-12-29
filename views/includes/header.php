@@ -1,3 +1,25 @@
+<?php
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    if(isset($_GET["action"]))
+    {
+        if($_GET["action"] == "logout")
+        {
+            var_dump("aya");
+             $_SESSION['logged_in'] = null;
+             $_SESSION['id_user'] = null;
+             $_SESSION['username'] = null;
+
+             session_unset();
+             header("location:index.php");
+             var_dump("2 aya");
+
+         }
+    }
+?>
+
 <!DOCTYPE html>
 <html>
 	<head>
@@ -26,18 +48,31 @@
             <div class="collapse navbar-collapse" id="navbarResponsive">
               <ul class="navbar-nav ml-auto">
                 <li class="nav-item active">
-                  <a class="nav-link" href="#">Home
+                  <a class="nav-link" href="index.php">Home
                     <span class="sr-only">(current)</span>
                   </a>
                 </li>
+
+                <?php
+                    if(isset($_SESSION['id_user'])) {
+                ?>
+                 <li class="nav-item">
+                  <a class="nav-link" href="?action=logout">LogOut</a>
+                </li>
+                <?php
+                    }else {
+                ?>
                 <li class="nav-item">
-                  <a class="nav-link" href="#">About</a>
+                  <a class="nav-link" href="Login.php">Login</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="#">Services</a>
+                  <a class="nav-link" href="Register.php">Register</a>
                 </li>
+                <?php
+                    }
+                ?>
                 <li class="nav-item">
-                  <a class="nav-link" href="#">Contact</a>
+                  <a class="nav-link" href="order.php">Your Orders</a>
                 </li>
               </ul>
             </div>

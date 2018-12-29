@@ -46,33 +46,36 @@ if(isset($_POST["add_to_basket"]))
                 if($cart_data[$keys]["item_id"] == $_POST["hidden_id"])
                 {
                     //if($_POST["hidden_stock"] > $cart_data[$keys]["item_quantity"])
-                    {
-                        var_dump($cart_data);
+                    //{
+
                         $cart_data[$keys]["item_quantity"] = $cart_data[$keys]["item_quantity"] + $_POST["quantity"];
+
                         // Updating the stock qauntity on Front end as well as in Database.
-                        var_dump($_POST["hidden_stock"]);
                         $_POST["hidden_stock"] = $_POST["hidden_stock"] - $_POST["quantity"] ;
-                        var_dump($_POST["hidden_stock"]);
                         $cart_data[$keys]["item_stock"] = $_POST["hidden_stock"];
                         $num = $_POST["hidden_stock"];
                         $id = $_POST["hidden_id"];
                         $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
                         $connect->exec($query);
-                        var_dump($cart_data);
+
+
                         // updating the basket Info
-                        //var_dump($id);
                         $query = "SELECT basket_quantity FROM basket WHERE id_items = $id";
                         $statement = $connect->prepare($query);
-
                         $statement->execute();
                         $result1 = $statement->fetchAll();
-                        //var_dump($result1);
                         $quantity = (int)$result1[0]['basket_quantity'] + $_POST["quantity"];
-                        var_dump($quantity);
                         $query = "UPDATE basket SET basket_quantity = $quantity WHERE id_items = $id";
                         $connect->exec($query);
 
-                    }
+                        //Updating the Cookie data into the 'cookie' table
+                        $cookie_id = $cart_data['item_Cookie_id'];
+                        $cookie_value = json_encode($cart_data);
+                        $query = "UPDATE cookie SET cookie_value = '$cookie_value' WHERE cookie_id = '$cookie_id'";
+                        var_dump($query);
+                        $connect->exec($query);
+
+                    //}
                     /*else
                     {
                         var_dump("javascriot");
@@ -109,24 +112,32 @@ if(isset($_POST["add_to_basket"]))
 			'item_quantity'		=>	$_POST["quantity"]
 		);
 		$cart_data[] = $item_array;
-		var_dump($cart_data);
-	    //Storing the basket data into 'basket' table
 
-            $itemID = (int)$item_array['item_id'];
-            $itemQuantity = (int)$item_array['item_quantity'];
-            $item_data = $cart_data['item_Cookie_id'];
-            var_dump($item_data);
-            $query = "INSERT INTO basket (id_items , basket_quantity, id_cookie) VALUES ($itemID, $itemQuantity, '$item_data')";
-            var_dump($query);
-            $connect->exec($query);
-            echo "New record created successfully";
+	    //Storing the basket data into 'basket' table
+        $itemID = (int)$item_array['item_id'];
+        $itemQuantity = (int)$item_array['item_quantity'];
+        $cookie_id = $cart_data['item_Cookie_id'];
+
+        //var_dump($item_data);
+        $query = "INSERT INTO basket (id_items , basket_quantity, id_cookie) VALUES ($itemID, $itemQuantity, '$cookie_id')";
+        var_dump($query);
+        $connect->exec($query);
+        echo "New record created successfully";
+
+        //Storing the Cookie data into the 'cookie' table
+        $cookie_value = json_encode($cart_data);
+        $query = "INSERT INTO `cookie`(`cookie_id`, `cookie_value`, `id_user`, `logged_In`)
+                    VALUES ('$cookie_id','$cookie_value','','false')";
+        var_dump($query);
+        $connect->exec($query);
 	}
 
 	//$basket_id++;
 	$item_data = json_encode($cart_data);
 	//var_dump($cart_data['item_Cookie_id']);
 	//var_dump("shopping_cart");
-    setcookie('shopping_cart', $item_data, time() + (86400 * 30));
+	$expiry = time() + (86400 * 30);
+    setcookie('shopping_cart', $item_data, $expiry);
 	//var_dump($_POST["hidden_Cookie_id"]);
 	header("location:index.php?success=1");
 }
@@ -135,7 +146,7 @@ if(isset($_POST["checkOut"]))
 {
     if(isset($_COOKIE['shopping_cart']))
     {
-        header("location:Register.php");
+        header("location:Login.php");
     }
 
 }
