@@ -66,7 +66,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                             $_SESSION["username"] = $username;
 
                             // Redirect user to welcome page
-                            header("location: index.php");
+                            header("location: CheckOut.php");
                         } else{
                             // Display an error message if password is not valid
                             $password_err = "The password you entered was not valid.";
@@ -90,51 +90,12 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     mysqli_close($link);
 }else{
 echo "Username and password not validated";}}
+
+include "views/includes/header.php";
 ?>
 
 
-<!DOCTYPE html>
-<html>
-	<head>
-		<title>Login</title>
-		<link rel="stylesheet" href="css/Signup.css">
-		<link rel="stylesheet" href="fonts/material-icon/css/material-design-iconic-font.min.css">
 
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
-		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-
-        <!-- Bootstrap core CSS -->
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-                  <div class="container">
-                    <a class="navbar-brand" href="#">Shopping Cart</a>
-                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-                      <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbarResponsive">
-                      <ul class="navbar-nav ml-auto">
-                        <li class="nav-item active">
-                          <a class="nav-link" href="index.php">Home
-                            <span class="sr-only">(current)</span>
-                          </a>
-                        </li>
-                        <li class="nav-item">
-                          <a class="nav-link" href="#">About</a>
-                        </li>
-                        <li class="nav-item">
-                          <a class="nav-link" href="#">Services</a>
-                        </li>
-                        <li class="nav-item">
-                          <a class="nav-link" href="#">Contact</a>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-    </nav>
-	</head>
-	<body style="padding-top: 70px";>
 	 <div class="container" style="max-width: 900px;">
          <div class="main">
 
@@ -148,7 +109,7 @@ echo "Username and password not validated";}}
                             <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" id="signup-form" class="signup-form">
                                 <h2 class="form-title">Login Here</h2>
                                 <div class="form-group <?php echo (!empty($username_err)) ? 'has-error' : ''; ?>"">
-                                    <input type="text" class="form-input" name="username" id="username" placeholder="Your Email" value="<?php echo $username; ?>"/>
+                                    <input type="text" class="form-input" name="username" id="username" placeholder="Username" value="<?php echo $username; ?>"/>
                                 <span class="help-block"><?php echo $username_err; ?></span>
                                 </div>
                                 <div class="form-group <?php echo (!empty($password_err)) ? 'has-error' : ''; ?>">
@@ -157,7 +118,7 @@ echo "Username and password not validated";}}
                                     <span class="help-block"><?php echo $password_err; ?></span>
                                 </div>
                                 <div class="form-group">
-                                    <input type="submit" name="submit" id="submit" class="form-submit" value="Sign up"/>
+                                    <input type="submit" name="submit" id="submit" class="form-submit" value="Sign In"/>
                                 </div>
                             </form>
                             <p class="loginhere">

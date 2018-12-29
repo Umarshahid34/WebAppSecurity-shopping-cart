@@ -131,6 +131,14 @@ if(isset($_POST["add_to_basket"]))
 	header("location:index.php?success=1");
 }
 
+if(isset($_POST["checkOut"]))
+{
+    if(isset($_COOKIE['shopping_cart']))
+    {
+        header("location:Register.php");
+    }
+
+}
 if(isset($_GET["action"]))
 {
 	if($_GET["action"] == "delete")
@@ -189,11 +197,6 @@ if(isset($_GET["action"]))
         $connect->exec($query);
 	}
 
-	if($_GET["action"] == "checkout")
-    {
-        setcookie('shopping_cart', "", time() - 3600);
-        header("location:index.php?checkout=1");
-    }
 }
 
 if(isset($_GET["success"]))
@@ -247,52 +250,13 @@ function updateStockOnRemoveButton(){
 }
 
 
-
+ include "views/includes/header.php";
 
 ?>
 
 
-<!DOCTYPE html>
-<html>
-	<head>
-		<title>Shopping Cart</title>
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
-		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 
-        <!-- Bootstrap core CSS -->
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-	</head>
-	<body style="padding-top: 70px; background-attachment: fixed; background-position: center; " background="images/signup-images/signup-bg.jpg">
-
-	<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-          <div class="container">
-            <a class="navbar-brand" href="#">Shopping Cart</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-              <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarResponsive">
-              <ul class="navbar-nav ml-auto">
-                <li class="nav-item active">
-                  <a class="nav-link" href="#">Home
-                    <span class="sr-only">(current)</span>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#">About</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#">Services</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#">Contact</a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </nav>
-		<br />
 		<div class="container" style="background-color:#ffffff; border-radius:5px; padding:16px;" align="center">
 			<br />
 			<h3 align="center">Shopping Cart</h3><br />
@@ -382,11 +346,11 @@ function updateStockOnRemoveButton(){
                     </tr>
                     <tr>
                         <td colspan="5" align="center">
-                            <a href="index.php?action=checkout">
-                            <form method="POST" action="Register.php?action=checkout?>">
+
+                            <form method="POST">
                                 <input type="submit" name="checkOut" style="margin-top:5px;" class="btn btn-success" value="CheckOut Order" />
                             </form>
-                            </a>
+
                         </td>
                     </tr>
                 <?php
