@@ -6,6 +6,10 @@ include 'Utilities.php';
 
 $connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "root");
 
+if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
 $message = '';
 $shopping_cart = '';
 $basket_id = 1;
@@ -23,7 +27,6 @@ if(isset($_POST["add_to_basket"]))
 		$cookie_data = stripslashes($_COOKIE['shopping_cart']);
         //var_dump($_COOKIE['shopping_cart']);
 		$cart_data = json_decode($cookie_data, true);
-
 	}
 	else
 	{
@@ -72,7 +75,7 @@ if(isset($_POST["add_to_basket"]))
                         $cookie_id = $cart_data['item_Cookie_id'];
                         $cookie_value = json_encode($cart_data);
                         $query = "UPDATE cookie SET cookie_value = '$cookie_value' WHERE cookie_id = '$cookie_id'";
-                        var_dump($query);
+                        //var_dump($query);
                         $connect->exec($query);
 
                     //}
@@ -126,10 +129,27 @@ if(isset($_POST["add_to_basket"]))
 
         //Storing the Cookie data into the 'cookie' table
         $cookie_value = json_encode($cart_data);
-        $query = "INSERT INTO `cookie`(`cookie_id`, `cookie_value`, `id_user`, `logged_In`)
-                    VALUES ('$cookie_id','$cookie_value','','false')";
-        var_dump($query);
-        $connect->exec($query);
+        var_dump($cookie_value);
+        if(isset($_COOKIE['shopping_cart']))
+        {
+            $query = "UPDATE cookie SET cookie_value = '$cookie_value' WHERE cookie_id = '$cookie_id'";
+            var_dump($query);
+            $connect->exec($query);
+        }
+        else
+        {
+            $LoggedIn = 0;
+            if($_SESSION['id_user'] > 0)
+            {
+                $id = $_SESSION['id_user'];
+                $LoggedIn = 1;
+            }
+
+            $query = "INSERT INTO `cookie`(`cookie_id`, `cookie_value`, `id_user`, `logged_In`)
+                        VALUES ('$cookie_id','$cookie_value', $id ,$LoggedIn )";
+            var_dump($query);
+            $connect->exec($query);
+        }
 	}
 
 	//$basket_id++;
@@ -177,6 +197,14 @@ if(isset($_GET["action"]))
                     $query = "DELETE FROM basket WHERE id_items = $id";
                     $connect->exec($query);
 
+                    // Deleting from the Cookie table
+                    $cookie_id = $cart_data['item_Cookie_id'];
+                    //$cookie_value = json_encode($cart_data);
+                    $query = "UPDATE cookie SET cookie_value = '$item_data' WHERE cookie_id = '$cookie_id'";
+                    var_dump($query);
+                    $connect->exec($query);
+
+
                     header("location:index.php?remove=1");
                 }
              }
@@ -206,6 +234,14 @@ if(isset($_GET["action"]))
 		// Deleting from the basket Table .
 		$query = "DELETE FROM basket";
         $connect->exec($query);
+
+        // Deleting from the Cookie Table .
+        if(isset($_SESSION['id_user']))
+        {
+            $cookie_id = $cart_data['item_Cookie_id'];
+            $query = "DELETE FROM cookie WHERE cookie_id = '$cookie_id' ";
+            $connect->exec($query);
+        }
 	}
 
 }
@@ -327,18 +363,68 @@ function updateStockOnRemoveButton(){
                         <th width="5%">Action</th>
                     </tr>
                 <?php
-                if(isset($_COOKIE['shopping_cart']))
+
+                if( isset($_SESSION['id_user']) )
+                {
+                    $total = 0;
+                    $id = (int)$_SESSION['id_user'];
+
+                    $query = $connect->prepare( "SELECT cookie_value FROM cookie Where id_user = $id ");
+                    $query->execute();
+                    $result = $query->fetch(PDO::FETCH_ASSOC);
+                    if(!empty($result))
+                    {
+                        $new_cart_data = json_decode($result['cookie_value'], true);
+
+                        foreach($new_cart_data as $keys => $values)
+                        {
+                            if($values != $new_cart_data['item_Cookie_id'])
+                             {
+                ?>
+                         <tr>
+                             <td><?php echo $values['item_name']; ?></td>
+                             <td><?php echo $values["item_quantity"]; ?></td>
+                             <td>&#8364; <?php echo $values["item_price"]; ?></td>
+                             <td>&#8364; <?php echo number_format($values["item_quantity"] * $values["item_price"], 2);?></td>
+                             <td><a href="index.php?action=delete&id=<?php echo $values["item_id"]; ?>"><span class="text-danger">Remove</span></a></td>
+                         </tr>
+
+                <?php
+                             $total = $total + ($values["item_quantity"] * $values["item_price"]);
+                             }
+                         }
+                     }
+                ?>
+                     <tr>
+                         <td colspan="3" align="right">Total</td>
+                         <td align="right">$ <?php echo number_format($total, 2); ?></td>
+                         <td></td>
+                     </tr>
+                     <tr>
+                         <td colspan="5" align="center">
+
+                             <form method="POST">
+                                 <input type="submit" name="checkOut" style="margin-top:5px;" class="btn btn-success" value="CheckOut Order" />
+                             </form>
+
+                         </td>
+                     </tr>
+                 <?php
+
+                }
+                else if(isset($_COOKIE['shopping_cart']))
                 {
                     $total = 0;
                     $cookie_data = stripslashes($_COOKIE['shopping_cart']);
                     $cart_data = json_decode($cookie_data, true);
+
                     foreach($cart_data as $keys => $values)
                     {
                         if($values != $cart_data['item_Cookie_id'])
                          {
                 ?>
                     <tr>
-                        <td><?php echo $values["item_name"]; ?></td>
+                        <td><?php echo $values['item_name']; ?></td>
                         <td><?php echo $values["item_quantity"]; ?></td>
                         <td>&#8364; <?php echo $values["item_price"]; ?></td>
                         <td>&#8364; <?php echo number_format($values["item_quantity"] * $values["item_price"], 2);?></td>

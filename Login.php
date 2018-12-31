@@ -1,4 +1,7 @@
 <?php
+
+$connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "root");
+
 // Initialize the session
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -73,8 +76,65 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                             $_SESSION["id_user"] = $id;
                             $_SESSION["username"] = $username;
 
-                            // Redirect user to welcome page
-                            header("location: CheckOut.php");
+
+
+
+                            //Storing user info in the Cookie table
+                            if(isset($_COOKIE['shopping_cart']))
+                            {
+                                $cookie_data = stripslashes($_COOKIE['shopping_cart']);
+                                var_dump($_COOKIE['shopping_cart']);
+                                $cart_data = json_decode($cookie_data, true); // require for select query
+                                $cookie_value = json_encode($cart_data); // require for insert query
+
+                                $id = (int)$_SESSION["id_user"];
+                                $cookie_id = $cart_data['item_Cookie_id'];
+
+                                $query = "SELECT id_user from cookie WHERE cookie_id = '$cookie_id' ";
+                                $statement = $connect->prepare($query);
+
+                                $statement->execute();
+                                $result = $statement->fetchAll();
+                                if($result > 0)
+                                {
+                                    $query = "UPDATE cookie SET logged_In = 1 WHERE id_user = '$id' ";
+                                    var_dump($query);
+                                    $connect->exec($query);
+                                }
+                                else
+                                {
+                                    $query = "INSERT INTO `cookie`(`cookie_id`, `cookie_value`, `id_user`, `logged_In`)
+                                                VALUES ('$cookie_id','$cookie_value', $id ,$LoggedIn )";
+                                    var_dump($query);
+                                    $connect->exec($query);
+                                }
+
+
+
+                                //creating and updating the cookie value if already in the basket
+                                $id = (int)$_SESSION["id_user"];
+                                $query = $connect->prepare( "SELECT cookie_value FROM cookie Where id_user = $id ");
+                                var_dump($query);
+                                $query->execute();
+                                $result = $query->fetch(PDO::FETCH_ASSOC);
+                                var_dump($result['cookie_value']);
+                                $new_cart_data = json_decode($result['cookie_value'], true);
+                                var_dump($new_cart_data['item_Cookie_id']);
+
+                                $item_data = json_encode($new_cart_data);
+                                var_dump($item_data);
+                                $expiry = time() + (86400 * 30);
+                                setcookie('shopping_cart', $item_data, $expiry);
+                                var_dump($_COOKIE['shopping_cart']);
+
+                                 // Redirect user to Checkout page
+                                header("location: CheckOut.php");
+                            }
+                            else
+                            {
+                                // Redirect user to Home page
+                                header("location: index.php");
+                            }
                         } else{
                             // Display an error message if password is not valid
                             $password_err = "The password you entered was not valid.";

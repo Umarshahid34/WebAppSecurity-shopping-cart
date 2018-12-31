@@ -6,4 +6,9 @@
 
         echo "<script>console.log( 'Debug Objects: " . $output . "' );</script>";
     }
+
+    function CheckIfLoggedInAlready(){
+
+    }
+
 ?>

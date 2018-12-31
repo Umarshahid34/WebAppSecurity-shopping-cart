@@ -11,7 +11,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     $name = trim($_POST["name"]);
     // Validate username
     if(empty(trim($_POST["username"]))){
-        var_dump($_POST);
+        //var_dump($_POST);
         $username_err = "Please enter a username.";
     } else{
         // Prepare a select statement

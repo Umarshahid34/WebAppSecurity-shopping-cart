@@ -1,4 +1,6 @@
 <?php
+    $connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "root");
+
     if (session_status() == PHP_SESSION_NONE) {
         session_start();
     }
@@ -7,14 +9,16 @@
     {
         if($_GET["action"] == "logout")
         {
-            var_dump("aya");
+            $id = (int)$_SESSION['id_user'];
+            $query = "UPDATE cookie SET logged_In = '0' WHERE id_user = $id";
+             $connect->exec($query);
              $_SESSION['logged_in'] = null;
              $_SESSION['id_user'] = null;
              $_SESSION['username'] = null;
 
              session_unset();
              header("location:index.php");
-             var_dump("2 aya");
+
 
          }
     }
@@ -27,6 +31,8 @@
 
         <link rel="stylesheet" href="css/CheckOut.css">
         <link rel="stylesheet" href="css/Signup.css">
+
+        <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css'>
 
         <link rel="stylesheet" href="fonts/material-icon/css/material-design-iconic-font.min.css">
 
@@ -47,6 +53,25 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarResponsive">
               <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <div class="cart-box" id="Normal">
+                        <ul class="nav navbar-nav">
+                            <li class="dropdown">
+                              <button href="#" class="draggable dropdown-toggle btn btn-primary btn-circle btn-xl" data-toggle="dropdown" role="button" aria-expanded="false"> <span class="glyphicon glyphicon-shopping-cart"></span></button>
+                               <span  class="cart-items-count"><span class=" notification-counter">243</span></span>
+                            </li>
+                          </ul>
+                    </div>
+                </li>
+                <?php
+                    if(isset($_SESSION['id_user'])) {
+                ?>
+                <li class="nav-item" style="padding-top: 6px;"">
+                  <font size="4"> <a class="nav-link"> <?php echo $_SESSION['username']; ?> </a> </font>
+                </li>
+                <?php
+                    }
+                ?>
                 <li class="nav-item active">
                   <a class="nav-link" href="index.php">Home
                     <span class="sr-only">(current)</span>
