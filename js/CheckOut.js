@@ -1,5 +1,7 @@
 //jQuery time
-var current_fs, next_fs, previous_fs; //fieldsets
+var current_fs ;
+var next_fs;
+var previous_fs; //fieldsets
 var left, opacity, scale; //fieldset properties which we will animate
 var animating; //flag to prevent quick multi-click glitches
 
@@ -80,13 +82,17 @@ $(".previous").click(function(){
 });
 
 $(".submit").click(function(){
-    return false;
+        alert("Your Order Has been Confirmed");
 })
 
 function SubmitPersonalInfoData() {
     var name = $("#name").val();
     var email = $("#email").val();
     var address = $("#address").val();
+
+    document.getElementById('username').innerHTML = name;
+    document.getElementById('useraddress').innerHTML = address;
+
     $.post("UpdatePersonalInfo.php", { name: name, email: email, address: address},
         function(data) {
         });
@@ -95,11 +101,26 @@ function SubmitPersonalInfoData() {
 function SubmitPaymentMethodData(){
     var rates = document.getElementsByName('customRadio');
     var rate_value;
+    var img;
     for(var i = 0; i < rates.length; i++){
-        if(rates[i].checked){
+        if(rates[i].checked) {
             rate_value = rates[i].value;
-            alert(rate_value);
-            $_SESSION['paymentMethod'] = rate_value;
+            if (rate_value == 'customRadio1') {
+                rate_value = 'Visa Card';
+                img ="images/visa-card-vector-logo.png";
+            }
+            if (rate_value == 'customRadio2')
+            {
+                rate_value = 'Master Card';
+                img="images/Mastercard-Logo-PNG-Vector-Free-Download.png";
+            }
+            if(rate_value == 'customRadio3')
+            {
+                rate_value = 'Paypal';
+                img ="images/paypal_1215259.png";
+            }
+            document.getElementById('methodname').innerHTML = rate_value;
+            document.getElementById('paymentMethodImage').src = img ;
         }
     }
 }

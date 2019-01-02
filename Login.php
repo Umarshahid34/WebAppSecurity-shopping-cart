@@ -83,29 +83,35 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                             if(isset($_COOKIE['shopping_cart']))
                             {
                                 $cookie_data = stripslashes($_COOKIE['shopping_cart']);
-                                var_dump($_COOKIE['shopping_cart']);
-                                $cart_data = json_decode($cookie_data, true); // require for select query
-                                $cookie_value = json_encode($cart_data); // require for insert query
-
+		                        $cart_data = json_decode($cookie_data, true);
+		                        $cookie_id = $cart_data['item_Cookie_id'];
                                 $id = (int)$_SESSION["id_user"];
-                                $cookie_id = $cart_data['item_Cookie_id'];
+                                var_dump($cart_data);
 
-                                $query = "SELECT id_user from cookie WHERE cookie_id = '$cookie_id' ";
+
+                                $query = "SELECT cookie_id from cookie WHERE id_user = '$id' ";
+                                //var_dump($query);
                                 $statement = $connect->prepare($query);
 
                                 $statement->execute();
                                 $result = $statement->fetchAll();
-                                if($result > 0)
+                                //var_dump($result);
+
+                                if(!empty($result))
                                 {
-                                    $query = "UPDATE cookie SET logged_In = 1 WHERE id_user = '$id' ";
-                                    var_dump($query);
+                                    $_SESSION['cookie_id'] = $result[0]['cookie_id'];
+                                    $cookie_id = $_SESSION['cookie_id'];
+                                    $query = "UPDATE cookie SET logged_In = 1 WHERE cookie_id = '$cookie_id' ";
+                                    //var_dump($query);
                                     $connect->exec($query);
                                 }
                                 else
                                 {
-                                    $query = "INSERT INTO `cookie`(`cookie_id`, `cookie_value`, `id_user`, `logged_In`)
-                                                VALUES ('$cookie_id','$cookie_value', $id ,$LoggedIn )";
-                                    var_dump($query);
+                                    $_SESSION['cookie_id'] = $cookie_id;
+                                    $query = "UPDATE cookie SET id_user = $id , logged_In = 1 WHERE cookie_id = '$cookie_id' ";
+                                    /*$query = "INSERT INTO `cookie`(`cookie_id`, `cookie_value`, `id_user`, `logged_In`)
+                                                VALUES ('$cookie_id','$cookie_value', $id , 1 )";*/
+                                    //var_dump($query);
                                     $connect->exec($query);
                                 }
 
@@ -114,10 +120,34 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                                 //creating and updating the cookie value if already in the basket
                                 $id = (int)$_SESSION["id_user"];
                                 $query = $connect->prepare( "SELECT cookie_value FROM cookie Where id_user = $id ");
+                               // var_dump($query);
+                                $query->execute();
+                                $result = $query->fetch(PDO::FETCH_ASSOC);
+                                //var_dump($result['cookie_value']);
+                                $new_cart_data = json_decode($result['cookie_value'], true);
+                               // var_dump($new_cart_data['item_Cookie_id']);
+                                var_dump($new_cart_data);
+                                $new_cart_data[] = $cart_data;
+                                var_dump($new_cart_data);
+                                $item_data = json_encode($new_cart_data);
+                               // var_dump($item_data);
+                                $expiry = time() + (86400 * 30);
+                                setcookie('shopping_cart', $item_data, $expiry);
+                                //var_dump($_COOKIE['shopping_cart']);
+
+                                 // Redirect user to Checkout page
+                                //header("location: CheckOut.php");
+                            }
+                            else
+                            {
+                                //creating and updating the cookie value if already in the basket
+                                $id = (int)$_SESSION["id_user"];
+                                $query = $connect->prepare( "SELECT cookie_value FROM cookie Where id_user = $id ");
                                 var_dump($query);
                                 $query->execute();
                                 $result = $query->fetch(PDO::FETCH_ASSOC);
-                                var_dump($result['cookie_value']);
+                                var_dump($result['cookie_id']);
+                                $_SESSION['cookie_id'] = $result['cookie_id'];
                                 $new_cart_data = json_decode($result['cookie_value'], true);
                                 var_dump($new_cart_data['item_Cookie_id']);
 
@@ -125,13 +155,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                                 var_dump($item_data);
                                 $expiry = time() + (86400 * 30);
                                 setcookie('shopping_cart', $item_data, $expiry);
-                                var_dump($_COOKIE['shopping_cart']);
+                                //var_dump($_COOKIE['shopping_cart']);
 
-                                 // Redirect user to Checkout page
-                                header("location: CheckOut.php");
-                            }
-                            else
-                            {
                                 // Redirect user to Home page
                                 header("location: index.php");
                             }

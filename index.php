@@ -5,14 +5,16 @@ include 'Utilities.php';
 //index.php
 
 $connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "root");
-
+$_SESSION['Cart_quantity'] = 0;
 if (session_status() == PHP_SESSION_NONE) {
         session_start();
+
     }
 
 $message = '';
 $shopping_cart = '';
 $basket_id = 1;
+
 
 
 if(isset($_POST["add_to_basket"]))
@@ -48,9 +50,6 @@ if(isset($_POST["add_to_basket"]))
             {
                 if($cart_data[$keys]["item_id"] == $_POST["hidden_id"])
                 {
-                    //if($_POST["hidden_stock"] > $cart_data[$keys]["item_quantity"])
-                    //{
-
                         $cart_data[$keys]["item_quantity"] = $cart_data[$keys]["item_quantity"] + $_POST["quantity"];
 
                         // Updating the stock qauntity on Front end as well as in Database.
@@ -63,31 +62,21 @@ if(isset($_POST["add_to_basket"]))
 
 
                         // updating the basket Info
+                        $cookie_id = $cart_data['item_Cookie_id'];
                         $query = "SELECT basket_quantity FROM basket WHERE id_items = $id";
                         $statement = $connect->prepare($query);
                         $statement->execute();
                         $result1 = $statement->fetchAll();
                         $quantity = (int)$result1[0]['basket_quantity'] + $_POST["quantity"];
-                        $query = "UPDATE basket SET basket_quantity = $quantity WHERE id_items = $id";
+                        $query = "UPDATE basket SET basket_quantity = $quantity WHERE id_items = $id AND id_cookie = '$cookie_id' ";
                         $connect->exec($query);
 
                         //Updating the Cookie data into the 'cookie' table
-                        $cookie_id = $cart_data['item_Cookie_id'];
+
                         $cookie_value = json_encode($cart_data);
                         $query = "UPDATE cookie SET cookie_value = '$cookie_value' WHERE cookie_id = '$cookie_id'";
                         //var_dump($query);
                         $connect->exec($query);
-
-                    //}
-                    /*else
-                    {
-                        var_dump("javascriot");
-                         echo "<script type='text/javascript'>
-                                        alert('JavaScript is awesome!');
-                               </script>";
-
-                        header("location:index.php?outOfStock=1");
-                    }*/
                 }
             }
 		}
@@ -123,22 +112,23 @@ if(isset($_POST["add_to_basket"]))
 
         //var_dump($item_data);
         $query = "INSERT INTO basket (id_items , basket_quantity, id_cookie) VALUES ($itemID, $itemQuantity, '$cookie_id')";
-        var_dump($query);
+        //var_dump($query);
         $connect->exec($query);
         echo "New record created successfully";
 
         //Storing the Cookie data into the 'cookie' table
         $cookie_value = json_encode($cart_data);
-        var_dump($cookie_value);
+        //var_dump($cookie_value);
         if(isset($_COOKIE['shopping_cart']))
         {
             $query = "UPDATE cookie SET cookie_value = '$cookie_value' WHERE cookie_id = '$cookie_id'";
-            var_dump($query);
+            //var_dump($query);
             $connect->exec($query);
         }
         else
         {
             $LoggedIn = 0;
+            $id = 0;
             if($_SESSION['id_user'] > 0)
             {
                 $id = $_SESSION['id_user'];
@@ -147,23 +137,43 @@ if(isset($_POST["add_to_basket"]))
 
             $query = "INSERT INTO `cookie`(`cookie_id`, `cookie_value`, `id_user`, `logged_In`)
                         VALUES ('$cookie_id','$cookie_value', $id ,$LoggedIn )";
-            var_dump($query);
+            //var_dump($query);
             $connect->exec($query);
         }
 	}
 
 	//$basket_id++;
+	//updating the cart count
+	$quantity =0;
+	$cookie_id = $cart_data['item_Cookie_id'];
+	$query = "SELECT basket_quantity FROM basket Where id_cookie = '$cookie_id' ";
+    $statement = $connect->prepare($query);
+    $statement->execute();
+    $result = $statement->fetchAll();
+
+    foreach($result as $rows => $values)
+    {
+        $quantity =$quantity + $values['basket_quantity'];
+    }
+     $_SESSION['Cart_quantity'] = $quantity;
+
 	$item_data = json_encode($cart_data);
 	//var_dump($cart_data['item_Cookie_id']);
 	//var_dump("shopping_cart");
-	$expiry = time() + (86400 * 30);
+	$expiry = time() + (86400 * 30); // // 86400 = 1 day ----- so Cookie will expire after 30 days
     setcookie('shopping_cart', $item_data, $expiry);
 	//var_dump($_POST["hidden_Cookie_id"]);
+
+
 	header("location:index.php?success=1");
 }
 
 if(isset($_POST["checkOut"]))
 {
+    if(isset($_SESSION['id_user']))
+    {
+        header("location:CheckOut.php");
+    }
     if(isset($_COOKIE['shopping_cart']))
     {
         header("location:Login.php");
@@ -204,6 +214,19 @@ if(isset($_GET["action"]))
                     var_dump($query);
                     $connect->exec($query);
 
+                    //updating the cart count
+                    $quantity =0;
+                    $cookie_id = $cart_data['item_Cookie_id'];
+                    $query = "SELECT basket_quantity FROM basket Where id_cookie = '$cookie_id' ";
+                    $statement = $connect->prepare($query);
+                    $statement->execute();
+                    $result = $statement->fetchAll();
+
+                    foreach($result as $rows => $values)
+                    {
+                        $quantity =$quantity + $values['basket_quantity'];
+                    }
+                     $_SESSION['Cart_quantity'] = $quantity;
 
                     header("location:index.php?remove=1");
                 }
@@ -242,6 +265,19 @@ if(isset($_GET["action"]))
             $query = "DELETE FROM cookie WHERE cookie_id = '$cookie_id' ";
             $connect->exec($query);
         }
+        //updating the cart count
+        $quantity =0;
+        $cookie_id = $cart_data['item_Cookie_id'];
+        $query = "SELECT basket_quantity FROM basket Where id_cookie = '$cookie_id' ";
+        $statement = $connect->prepare($query);
+        $statement->execute();
+        $result = $statement->fetchAll();
+
+        foreach($result as $rows => $values)
+        {
+            $quantity =$quantity + $values['basket_quantity'];
+        }
+         $_SESSION['Cart_quantity'] = $quantity;
 	}
 
 }
@@ -322,8 +358,8 @@ function updateStockOnRemoveButton(){
 				<form method="post">
 					<div style="background-color:#ffffff; border-radius:5px; padding:16px;" align="center">
 
-						<img src="images/<?php echo $row["item_image"]; ?>" class="img-responsive" /><br />
-                        <div style="background-color:#c6FFFF; border-radius:6px; padding:3px;">
+						<img style="width: 215px; height: 215px;" src="images/<?php echo $row["item_image"]; ?>" class="img-responsive" /><br />
+                        <div class="btn btn-info"; style="background-color:darkcyan; border-radius:6px; padding:3px; opacity: 0.8;">
 						    <h4 class="text"><?php echo $row["item_name"]; ?></h4>
                         </div>
 
@@ -415,6 +451,8 @@ function updateStockOnRemoveButton(){
                 else if(isset($_COOKIE['shopping_cart']))
                 {
                     $total = 0;
+
+
                     $cookie_data = stripslashes($_COOKIE['shopping_cart']);
                     $cart_data = json_decode($cookie_data, true);
 
@@ -467,22 +505,3 @@ function updateStockOnRemoveButton(){
 		<br />
 	</body>
 </html>
-
-<script type="text/javascript">
-$(document).ready(function(){
-    var quantity_field = $('.form-control');
-    var stock_field = $('.stock');
-    var stock_field = <?php echo json_encode($cart_data['']); ?>;
-
-    //$cookie_data = stripslashes($_COOKIE['shopping_cart']);
-    //$cart_data = json_decode($cookie_data, true);
-    alert(stock_field);
-    $(quantity_field).change(function(){
-        alert( stock_field.value);
-        alert(this.value);
-        if(this.value > stock_field.value){
-            alert("We have maximum " + stock_field.value + "items in stock");
-        }
-    });
-});
-</script>

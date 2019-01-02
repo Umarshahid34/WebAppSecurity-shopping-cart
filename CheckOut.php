@@ -1,13 +1,49 @@
 <?php
+if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
     $connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "root");
 
     include "views/includes/header.php";
+
+
+    if(isset($_POST["submit"]))
+    {
+        $cookie_id = $_SESSION['cookie_id'];
+        $query = "SELECT item_id,item_name,item_price,item_image,basket_quantity,id_user from
+                    (SELECT cookie.cookie_id, cookie.id_user , basket.id_cookie, basket.basket_quantity, items.item_id, items.item_name,items.item_price, items.item_image FROM basket
+                    INNER JOIN cookie ON basket.id_cookie = cookie.cookie_id
+                    LEFT OUTER JOIN items on basket.id_items=items.item_id)result
+                    WHERE result.cookie_id = '$cookie_id' ";
+        $statement = $connect->prepare($query);
+
+        $statement->execute();
+        $result = $statement->fetchAll();
+        $Total_amount = 0;
+        $date = date("Y/d/m");
+        //$new_date = STR_TO_DATE('$date', '%m/%d/%Y');
+        //var_dump($new_date);
+        foreach($result as $row)
+        {
+            $quantity = $row['basket_quantity'];
+            $price = $row['item_price'];
+            $item_id = $row['item_id'];
+            $user_id = $row['id_user'];
+            $total_price = $row['item_price'] * $row['basket_quantity'];
+
+            $query = " INSERT INTO `orders`(`orders_quantity`, `orders_price`, `id_items`, `id_user`,
+                        `order_total_price`) VALUES ($quantity , $price, $item_id, $user_id , $total_price ) " ;
+            $connect->exec($query);
+        }
+        header("location: index.php");
+    }
 ?>
 
 
 	<div class="container"  style="max-width: 1100px;">
 	 <div class="row">
-         <div class="col-md-8" style=" padding-bottom: 33px;">
+         <div class="col-md-12" style=" padding-bottom: 33px;">
              <form id="msform" method="post">
                  <!-- progressbar -->
                  <ul id="progressbar">
@@ -87,19 +123,19 @@
                      </div>
 
                      <div class="row">
-                        <div class="col-md-4" style="padding-left:83px;">
+                        <div class="col-md-4" style="padding-left:132px;">
                             <div class="custom-control custom-radio" >
                               <input type="radio" value="customRadio1" id="customRadio1" name="customRadio" class="custom-control-input" checked>
                               <label class="custom-control-label" for="customRadio1"> </label>
                             </div>
                         </div>
-                        <div class="col-md-4" style="padding-left:92px;">
+                        <div class="col-md-4" style="padding-left:132px;">
                             <div class="custom-control custom-radio" >
                               <input type="radio"  value="customRadio2" id="customRadio2" name="customRadio" class="custom-control-input">
                               <label class="custom-control-label" for="customRadio2"></label>
                             </div>
                         </div>
-                        <div class="col-md-4" style="padding-left:83px;">
+                        <div class="col-md-4" style="padding-left:132px;">
                             <div class="custom-control custom-radio" >
                               <input type="radio" value="customRadio3" id="customRadio3" name="customRadio" class="custom-control-input">
                               <label class="custom-control-label" for="customRadio3"></label>
@@ -113,52 +149,88 @@
                  <fieldset>
                      <h2 class="fs-title">Order Details</h2>
                      <h3 class="fs-subtitle">Go through your order details</h3>
+
                      <div class="row">
-                        <div class="col-md-6" style="padding-left:0px;">
-                            <h3>Delivery Address</h3>
+                        <div class="col-md-6" style="padding-left:0px; ">
+                            <h3 style="color: darkcyan;">Delivery Address</h3>
                         </div>
                         <div class="col-md-6" style="padding-left:0px;">
-                            <h3>Delivery Address</h3>
-                            <h3>Delivery Address</h3>
-                            <h3>Delivery Address</h3>
-                            <h3>Delivery Address</h3>
-                            <h3>Delivery Address</h3>
+                            <b><span id="username" value="">  </span> </b>
+                            </br>
+                            <span id="useraddress" value ="">  </span>
+
                         </div>
                      </div>
+                     </br>
                      <hr>
                      <div class="row">
                          <div class="col-md-6" style="padding-left:0px;">
-                             <h3>Payment Method</h3>
+                             <h3 style="color: darkcyan;">Payment Method</h3>
                          </div>
                          <div class="col-md-6" style="padding-left:0px;">
-                             <h3>Delivery Address</h3>
-                             <h3>Delivery Address</h3>
-                             <h3>Delivery Address</h3>
-                             <h3>Delivery Address</h3>
-                             <h3>Delivery Address</h3>
+                             <span>
+                                <img id="paymentMethodImage" src="" width="100" height="100">
+                             </span>
+                             <b><span id ="methodname" value =""> </span></b>
                          </div>
                      </div>
                      <hr>
 
-                     <h3>Order Items</h3>
-                     <div class="row">
-                           <div class="col-md-12" style="padding-left:0px; border: 1px solid;">
-                               <h3>Delivery Address</h3>
-                               <h3>Delivery Address</h3>
-                               <h3>Delivery Address</h3>
-                               <h3>Delivery Address</h3>
-                               <h3>Delivery Address</h3>
-                           </div>
-                     </div>
+                     <h3 style="color: darkcyan;" >Order Items</h3>
+                     <div class="row" style="padding-left:0px; border: 1px ;">
+                     <?php
+                        $cookie_id = $_SESSION['cookie_id'];
+                        $query = "SELECT item_id,item_name,item_price,item_image,basket_quantity from
+                                    (SELECT cookie.cookie_id, basket.id_cookie, basket.basket_quantity, items.item_id, items.item_name,items.item_price, items.item_image FROM basket
+                                    INNER JOIN cookie ON basket.id_cookie = cookie.cookie_id
+                                    LEFT OUTER JOIN items on basket.id_items=items.item_id)result
+                                    WHERE result.cookie_id = '$cookie_id' ";
+                        $statement = $connect->prepare($query);
 
+                        $statement->execute();
+                        $result = $statement->fetchAll();
+                        $Total_amount = 0;
+                        foreach($result as $row)
+                        {
+
+                     ?>
+
+                                   <div class="col-md-3">
+                                        <div style="background-color:#ffffff; border-radius:5px; padding:16px;" align="center">
+                                            <img src="images/<?php echo $row["item_image"]; ?>" class="img-responsive" /><br />
+                                               <div style="background-color:lavender; border-radius:6px; padding:3px;">
+                                                <h4 class="text"><?php echo $row["item_name"]; ?></h4>
+                                               </div>
+
+                                                <h4 class="text-danger">&#8364; <?php echo $row["item_price"]; ?></h4>
+
+                                                <div style="background-color:lavender; border-radius:6px; padding:3px;">
+                                                     <h4 class="text"> Qty: <?php echo $row["basket_quantity"]; ?></h4>
+                                                </div>
+                                        </div>
+                                    </div>
+
+                    <?php
+                            $Total_amount += $row["item_price"] * $row["basket_quantity"];
+                        }
+                    ?>
+                    </div>
+                    <hr>
+                    <div class="row">
+                         <div class="col-md-6" style="padding-left:0px;">
+                             <h3 style="color: darkcyan;">Total Amount</h3>
+                         </div>
+                         <div class="col-md-6" style="padding-left:0px;">
+                             <b><h3>&#8364; <?php echo $Total_amount; ?> </h3></b>
+                         </div>
+                     </div>
+                     <hr>
                      <input type="button" name="previous" class="previous action-button-previous" value="Previous"/>
                      <input type="submit" name="submit" class="submit action-button" value="Confirm"/>
                  </fieldset>
              </form>
          </div>
-         <div class=" container col-md-4" style="background-color:#ffffff; border-radius:5px; padding:16px; height="500px"; align="center">
-                 <h4> Umar </h4>
-         </div>
+
 
      </div>
      </div>

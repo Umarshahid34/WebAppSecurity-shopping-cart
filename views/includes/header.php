@@ -58,7 +58,14 @@
                         <ul class="nav navbar-nav">
                             <li class="dropdown">
                               <button href="#" class="draggable dropdown-toggle btn btn-primary btn-circle btn-xl" data-toggle="dropdown" role="button" aria-expanded="false"> <span class="glyphicon glyphicon-shopping-cart"></span></button>
-                               <span  class="cart-items-count"><span class=" notification-counter">243</span></span>
+                               <span  class="cart-items-count"><span id ="cart_quantity" class=" notification-counter">
+                               <?php
+                               if(isset($_SESSION['Cart_quantity'])) // displaying thr Cart Count
+                                    echo $_SESSION['Cart_quantity'];
+                               else
+                                    echo '0';
+                               ?>
+                               </span></span>
                             </li>
                           </ul>
                     </div>

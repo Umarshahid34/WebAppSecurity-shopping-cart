@@ -13,4 +13,5 @@ $connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "root
    $query = "UPDATE users SET user_name = '$name', user_email = '$email', user_address = '$address' WHERE user_id = $id";
     var_dump($query);
    $connect->exec($query);
+   $_SESSION['paymentMethod'] = $_POST['rate_value'];
 ?>
