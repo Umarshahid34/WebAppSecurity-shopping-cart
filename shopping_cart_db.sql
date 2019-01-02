@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 02, 2019 at 12:12 PM
+-- Generation Time: Jan 02, 2019 at 12:20 PM
 -- Server version: 5.6.17
 -- PHP Version: 5.5.12
 
@@ -114,9 +114,9 @@ INSERT INTO `items` (`item_id`, `item_name`, `item_price`, `item_description`, `
 (3, 'Samsung Note 9', 900.00, '', 10, 'Samsung_note9.jpg'),
 (4, 'Iphone Xs', 1200.00, '', 9, 'iphoneXs.jpg'),
 (5, 'OnePlus 6T', 600.00, '', 17, 'one_plus_6t.jpg'),
-(6, 'Huawei P20', 750.00, '', -2, 'huawei-p20.jpg'),
-(7, 'Goole Pixel 3', 750.00, '', -9, 'google_pixel3.jpg'),
-(8, 'LG G7', 500.00, '', -6, 'Lg_g7.jpg');
+(6, 'Huawei P20', 750.00, '', 12, 'huawei-p20.jpg'),
+(7, 'Goole Pixel 3', 750.00, '', 19, 'google_pixel3.jpg'),
+(8, 'LG G7', 500.00, '', 16, 'Lg_g7.jpg');
 
 -- --------------------------------------------------------
 
