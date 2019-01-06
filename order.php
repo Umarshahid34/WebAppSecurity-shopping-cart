@@ -3,16 +3,18 @@
 ?>
 
 
-    <div class="container border border-info" style="background-color:#ffffff; width:900px; height:600px ;border-radius:5px; padding:16px;" align="center">
+    <div class="container border border-info" style="background-color:#ffffff; border-radius:5px; padding:16px;" align="center">
         <br />
         <h3 align="center">Your Orders</h3><br />
         <br /><br />
         <?php
             $id = $_SESSION['id_user'] ;
-            $query ="SELECT * FROM items INNER JOIN orders ON items.item_id = orders.id_items WHERE orders.id_user = $id";
-            $statement = $connect->prepare($query);
-            $statement->execute();
-            $result = $statement->fetchAll();
+            $query ="SELECT * FROM items INNER JOIN orders ON items.item_id = orders.id_items WHERE orders.id_user = :id";
+            $stmt = $connect->prepare($query);
+
+            $stmt->bindParam(":id",$id);
+            $stmt->execute();
+            $result = $stmt->fetchAll();
             foreach($result as $row)
             {
         ?>
@@ -21,7 +23,7 @@
                 <div class="col-md-8">
                     <div style="padding:16px;" align="center">
                         <div class="col-md-2">
-                            <img src="images/<?php echo $row["item_image"]; ?>" class="img-responsive" /><br />
+                            <img style="width: 115px; height: 83px;" src="images/<?php echo $row["item_image"]; ?>" class="img-responsive" /><br />
                         </div>
                         <div style="" align="left">
                             <h4 class="text"><?php echo $row["item_name"]; ?></h4>

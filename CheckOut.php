@@ -15,11 +15,12 @@ if (session_status() == PHP_SESSION_NONE) {
                     (SELECT cookie.cookie_id, cookie.id_user , basket.id_cookie, basket.basket_quantity, items.item_id, items.item_name,items.item_price, items.item_image FROM basket
                     INNER JOIN cookie ON basket.id_cookie = cookie.cookie_id
                     LEFT OUTER JOIN items on basket.id_items=items.item_id)result
-                    WHERE result.cookie_id = '$cookie_id' ";
-        $statement = $connect->prepare($query);
+                    WHERE result.cookie_id = :cookie_id ";
+        $stmt = $connect->prepare($query);
 
-        $statement->execute();
-        $result = $statement->fetchAll();
+        $stmt->bindParam(":cookie_id",$cookie_id);
+        $stmt->execute();
+        $result = $stmt->fetchAll();
         $Total_amount = 0;
         $date = date("Y/d/m");
         //$new_date = STR_TO_DATE('$date', '%m/%d/%Y');
@@ -33,9 +34,23 @@ if (session_status() == PHP_SESSION_NONE) {
             $total_price = $row['item_price'] * $row['basket_quantity'];
 
             $query = " INSERT INTO `orders`(`orders_quantity`, `orders_price`, `id_items`, `id_user`,
-                        `order_total_price`) VALUES ($quantity , $price, $item_id, $user_id , $total_price ) " ;
-            $connect->exec($query);
+                        `order_total_price`) VALUES (:quantity , :price, :item_id, :user_id , :total_price ) " ;
+
+            $stmt = $connect->prepare($query);
+
+            $stmt->bindParam(":quantity",$quantity);
+            $stmt->bindParam(":price",$price);
+            $stmt->bindParam(":item_id",$item_id);
+            $stmt->bindParam(":user_id",$user_id);
+            $stmt->bindParam(":total_price",$total_price);
+
+            $stmt->execute();
         }
+
+
+
+
+
         header("location: index.php");
     }
 ?>
@@ -58,9 +73,12 @@ if (session_status() == PHP_SESSION_NONE) {
 
                      <?php
                         $id = $_SESSION['id_user'];
-                        $query = $connect->prepare( "SELECT * FROM users Where user_id = $id");
-                        $query->execute();
-                        $result = $query->fetch(PDO::FETCH_ASSOC);
+                        $query = "SELECT * FROM users Where user_id = :id";
+                        $stmt = $connect->prepare($query);
+
+                        $stmt->bindParam(":id",$id);
+                        $stmt->execute();
+                        $result = $stmt->fetch(PDO::FETCH_ASSOC);
                         if(!empty($result))
                         {
                             $user_name = $result['user_name'];
@@ -184,11 +202,12 @@ if (session_status() == PHP_SESSION_NONE) {
                                     (SELECT cookie.cookie_id, basket.id_cookie, basket.basket_quantity, items.item_id, items.item_name,items.item_price, items.item_image FROM basket
                                     INNER JOIN cookie ON basket.id_cookie = cookie.cookie_id
                                     LEFT OUTER JOIN items on basket.id_items=items.item_id)result
-                                    WHERE result.cookie_id = '$cookie_id' ";
-                        $statement = $connect->prepare($query);
+                                    WHERE result.cookie_id = :cookie_id ";
+                        $stmt = $connect->prepare($query);
 
-                        $statement->execute();
-                        $result = $statement->fetchAll();
+                        $stmt->bindParam(":cookie_id",$cookie_id);
+                        $stmt->execute();
+                        $result = $stmt->fetchAll();
                         $Total_amount = 0;
                         foreach($result as $row)
                         {
@@ -197,7 +216,7 @@ if (session_status() == PHP_SESSION_NONE) {
 
                                    <div class="col-md-3">
                                         <div style="background-color:#ffffff; border-radius:5px; padding:16px;" align="center">
-                                            <img src="images/<?php echo $row["item_image"]; ?>" class="img-responsive" /><br />
+                                            <img style="width: 115px; height: 115px;" src="images/<?php echo $row["item_image"]; ?>" class="img-responsive" /><br />
                                                <div style="background-color:lavender; border-radius:6px; padding:3px;">
                                                 <h4 class="text"><?php echo $row["item_name"]; ?></h4>
                                                </div>

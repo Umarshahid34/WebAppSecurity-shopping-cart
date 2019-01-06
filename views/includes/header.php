@@ -10,14 +10,21 @@
         if($_GET["action"] == "logout")
         {
             $id = (int)$_SESSION['id_user'];
-            $query = "UPDATE cookie SET logged_In = '0' WHERE id_user = $id";
-             $connect->exec($query);
-             $_SESSION['logged_in'] = null;
-             $_SESSION['id_user'] = null;
-             $_SESSION['username'] = null;
+            $logged_In =0;
+            $query = "UPDATE cookie SET logged_In = :logged_In WHERE id_user = :id ";
+            $stmt = $connect->prepare($query);
+
+            $stmt->bindParam(":logged_In",$logged_In);
+            $stmt->bindParam(":id",$id);
+            $stmt->execute();
+
+            $_SESSION['logged_in'] = null;
+            $_SESSION['id_user'] = null;
+            $_SESSION['username'] = null;
 
              session_unset();
-             header("location:index.php");
+
+            header("location:index.php");
 
 
          }

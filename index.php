@@ -57,26 +57,40 @@ if(isset($_POST["add_to_basket"]))
                         $cart_data[$keys]["item_stock"] = $_POST["hidden_stock"];
                         $num = $_POST["hidden_stock"];
                         $id = $_POST["hidden_id"];
-                        $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
-                        $connect->exec($query);
+                        $query = "UPDATE items SET item_stock = :number WHERE item_id = :id";
+                        $stmt = $connect->prepare($query);
+
+                        $stmt->bindParam(":number",$num);
+                        $stmt->bindParam(":id",$id);
+                        $stmt->execute();
 
 
                         // updating the basket Info
                         $cookie_id = $cart_data['item_Cookie_id'];
-                        $query = "SELECT basket_quantity FROM basket WHERE id_items = $id";
-                        $statement = $connect->prepare($query);
-                        $statement->execute();
-                        $result1 = $statement->fetchAll();
+                        $query = "SELECT basket_quantity FROM basket WHERE id_items = :id";
+                        $stmt = $connect->prepare($query);
+
+                        $stmt->bindParam(":id",$id);
+                        $stmt->execute();
+
+                        $result1 = $stmt->fetchAll();
                         $quantity = (int)$result1[0]['basket_quantity'] + $_POST["quantity"];
-                        $query = "UPDATE basket SET basket_quantity = $quantity WHERE id_items = $id AND id_cookie = '$cookie_id' ";
-                        $connect->exec($query);
+                        $query = "UPDATE basket SET basket_quantity = :quantity WHERE id_items = :id AND id_cookie = :cookie_id ";
+                        $stmt = $connect->prepare($query);
+
+                        $stmt->bindParam(":quantity",$quantity);
+                        $stmt->bindParam(":id",$id);
+                        $stmt->bindParam(":cookie_id",$cookie_id);
+                        $stmt->execute();
 
                         //Updating the Cookie data into the 'cookie' table
-
                         $cookie_value = json_encode($cart_data);
-                        $query = "UPDATE cookie SET cookie_value = '$cookie_value' WHERE cookie_id = '$cookie_id'";
-                        //var_dump($query);
-                        $connect->exec($query);
+                        $query = "UPDATE cookie SET cookie_value = :cookie_value WHERE cookie_id = :cookie_id";
+                        $stmt = $connect->prepare($query);
+
+                        $stmt->bindParam(":cookie_value",$cookie_value);
+                        $stmt->bindParam(":cookie_id",$cookie_id);
+                        $stmt->execute();
                 }
             }
 		}
@@ -92,8 +106,12 @@ if(isset($_POST["add_to_basket"]))
         $_POST["hidden_stock"] = $_POST["hidden_stock"] - $_POST["quantity"] ;
         $num = $_POST["hidden_stock"];
         $id = $_POST["hidden_id"];
-        $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
-        $connect->exec($query);
+        $query = "UPDATE items SET item_stock = :num WHERE item_id = :id";
+        $stmt = $connect->prepare($query);
+
+        $stmt->bindParam(":num",$num);
+        $stmt->bindParam(":id",$id);
+        $stmt->execute();
 
 
 		$item_array = array(
@@ -111,9 +129,14 @@ if(isset($_POST["add_to_basket"]))
         $cookie_id = $cart_data['item_Cookie_id'];
 
         //var_dump($item_data);
-        $query = "INSERT INTO basket (id_items , basket_quantity, id_cookie) VALUES ($itemID, $itemQuantity, '$cookie_id')";
-        //var_dump($query);
-        $connect->exec($query);
+        $query = "INSERT INTO basket (id_items , basket_quantity, id_cookie) VALUES (:itemID, :itemQuantity, :cookie_id)";
+        $stmt = $connect->prepare($query);
+
+        $stmt->bindParam(":itemID",$itemID);
+        $stmt->bindParam(":itemQuantity",$itemQuantity);
+        $stmt->bindParam(":cookie_id",$cookie_id);
+        $stmt->execute();
+
         echo "New record created successfully";
 
         //Storing the Cookie data into the 'cookie' table
@@ -121,9 +144,12 @@ if(isset($_POST["add_to_basket"]))
         //var_dump($cookie_value);
         if(isset($_COOKIE['shopping_cart']))
         {
-            $query = "UPDATE cookie SET cookie_value = '$cookie_value' WHERE cookie_id = '$cookie_id'";
-            //var_dump($query);
-            $connect->exec($query);
+            $query = "UPDATE cookie SET cookie_value = :cookie_value WHERE cookie_id = :cookie_id";
+            $stmt = $connect->prepare($query);
+
+            $stmt->bindParam(":cookie_value",$cookie_value);
+            $stmt->bindParam(":cookie_id",$cookie_id);
+            $stmt->execute();
         }
         else
         {
@@ -136,9 +162,14 @@ if(isset($_POST["add_to_basket"]))
             }
 
             $query = "INSERT INTO `cookie`(`cookie_id`, `cookie_value`, `id_user`, `logged_In`)
-                        VALUES ('$cookie_id','$cookie_value', $id ,$LoggedIn )";
-            //var_dump($query);
-            $connect->exec($query);
+                        VALUES (:cookie_id,:cookie_value, :id ,:LoggedIn )";
+            $stmt = $connect->prepare($query);
+
+            $stmt->bindParam(":cookie_value",$cookie_value);
+            $stmt->bindParam(":cookie_id",$cookie_id);
+            $stmt->bindParam(":id",$id);
+            $stmt->bindParam(":LoggedIn",$LoggedIn);
+            $stmt->execute();
         }
 	}
 
@@ -146,10 +177,13 @@ if(isset($_POST["add_to_basket"]))
 	//updating the cart count
 	$quantity =0;
 	$cookie_id = $cart_data['item_Cookie_id'];
-	$query = "SELECT basket_quantity FROM basket Where id_cookie = '$cookie_id' ";
-    $statement = $connect->prepare($query);
-    $statement->execute();
-    $result = $statement->fetchAll();
+	$query = "SELECT basket_quantity FROM basket Where id_cookie = :cookie_id ";
+    $stmt = $connect->prepare($query);
+
+    $stmt->bindParam(":cookie_id",$cookie_id);
+    $stmt->execute();
+
+    $result = $stmt->fetchAll();
 
     foreach($result as $rows => $values)
     {
@@ -161,7 +195,7 @@ if(isset($_POST["add_to_basket"]))
 	//var_dump($cart_data['item_Cookie_id']);
 	//var_dump("shopping_cart");
 	$expiry = time() + (86400 * 30); // // 86400 = 1 day ----- so Cookie will expire after 30 days
-    setcookie('shopping_cart', $item_data, $expiry);
+    setcookie('shopping_cart', $item_data, $expiry, null, null, null, true);
 	//var_dump($_POST["hidden_Cookie_id"]);
 
 
@@ -196,31 +230,43 @@ if(isset($_GET["action"]))
                     $cart_data[$keys]['item_stock'] = $cart_data[$keys]["item_stock"] + $cart_data[$keys]["item_quantity"] ;
                     $num = $cart_data[$keys]['item_stock'];
                     $id = $cart_data[$keys]['item_id'];
-                    $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
-                    $connect->exec($query);
+                    $query = "UPDATE items SET item_stock = :num WHERE item_id = :id";
+                    $stmt = $connect->prepare($query);
+
+                    $stmt->bindParam(":num",$num);
+                    $stmt->bindParam(":id",$id);
+                    $stmt->execute();
 
                     unset($cart_data[$keys]);
                     $item_data = json_encode($cart_data);
-                    setcookie('shopping_cart', $item_data, time() + (86400 * 30));
+                    setcookie('shopping_cart', $item_data, time() + (86400 * 30) , null, null, null, true);
 
                     // Deleting from the basket Table .
-                    $query = "DELETE FROM basket WHERE id_items = $id";
-                    $connect->exec($query);
+                    $query = "DELETE FROM basket WHERE id_items = :id";
+                    $stmt = $connect->prepare($query);
+
+                    $stmt->bindParam(":id",$id);
+                    $stmt->execute();
 
                     // Deleting from the Cookie table
                     $cookie_id = $cart_data['item_Cookie_id'];
                     //$cookie_value = json_encode($cart_data);
-                    $query = "UPDATE cookie SET cookie_value = '$item_data' WHERE cookie_id = '$cookie_id'";
-                    var_dump($query);
-                    $connect->exec($query);
+                    $query = "UPDATE cookie SET cookie_value = :item_data WHERE cookie_id = :cookie_id";
+                    $stmt = $connect->prepare($query);
+
+                    $stmt->bindParam(":item_data",$item_data);
+                    $stmt->bindParam(":cookie_id",$cookie_id);
+                    $stmt->execute();
 
                     //updating the cart count
                     $quantity =0;
                     $cookie_id = $cart_data['item_Cookie_id'];
-                    $query = "SELECT basket_quantity FROM basket Where id_cookie = '$cookie_id' ";
-                    $statement = $connect->prepare($query);
-                    $statement->execute();
-                    $result = $statement->fetchAll();
+                    $query = "SELECT basket_quantity FROM basket Where id_cookie = :cookie_id ";
+                    $stmt = $connect->prepare($query);
+
+                    $stmt->bindParam(":cookie_id",$cookie_id);
+                    $stmt->execute();
+                    $result = $stmt->fetchAll();
 
                     foreach($result as $rows => $values)
                     {
@@ -247,31 +293,40 @@ if(isset($_GET["action"]))
                 $cart_data[$keys]['item_stock'] = $cart_data[$keys]["item_stock"] + $cart_data[$keys]["item_quantity"] ;
                 $num = $cart_data[$keys]['item_stock'];
                 $id = $cart_data[$keys]['item_id'];
-                $query = "UPDATE items SET item_stock = $num WHERE item_id = $id";
-                $connect->exec($query);
+                $query = "UPDATE items SET item_stock = :num WHERE item_id = :id";
+                $stmt = $connect->prepare($query);
 
-                setcookie('shopping_cart', "", time() - 3600);
+                $stmt->bindParam(":num",$num);
+                $stmt->bindParam(":id",$id);
+                $stmt->execute();
+
+                setcookie('shopping_cart', "", time() - 3600 , null, null, null, true);
                 header("location:index.php?clearall=1");
             }
 		}
 		// Deleting from the basket Table .
-		$query = "DELETE FROM basket";
-        $connect->exec($query);
+		//$query = "DELETE FROM basket";
+        //$connect->exec($query);
 
         // Deleting from the Cookie Table .
         if(isset($_SESSION['id_user']))
         {
             $cookie_id = $cart_data['item_Cookie_id'];
-            $query = "DELETE FROM cookie WHERE cookie_id = '$cookie_id' ";
-            $connect->exec($query);
+            $query = "DELETE FROM cookie WHERE cookie_id = :cookie_id ";
+            $stmt = $connect->prepare($query);
+
+            $stmt->bindParam(":cookie_id",$cookie_id);
+            $stmt->execute();
         }
         //updating the cart count
         $quantity =0;
         $cookie_id = $cart_data['item_Cookie_id'];
-        $query = "SELECT basket_quantity FROM basket Where id_cookie = '$cookie_id' ";
-        $statement = $connect->prepare($query);
-        $statement->execute();
-        $result = $statement->fetchAll();
+        $query = "SELECT basket_quantity FROM basket Where id_cookie = :cookie_id ";
+        $stmt = $connect->prepare($query);
+
+        $stmt->bindParam(":cookie_id",$cookie_id);
+        $stmt->execute();
+        $result = $stmt->fetchAll();
 
         foreach($result as $rows => $values)
         {
@@ -404,14 +459,16 @@ function updateStockOnRemoveButton(){
                 {
                     $total = 0;
                     $id = (int)$_SESSION['id_user'];
+                    $query = "SELECT cookie_value FROM cookie Where id_user = :id ";
+                    $stmt = $connect->prepare($query);
 
-                    $query = $connect->prepare( "SELECT cookie_value FROM cookie Where id_user = $id ");
-                    $query->execute();
-                    $result = $query->fetch(PDO::FETCH_ASSOC);
+                    $stmt->bindParam(":id",$id);
+                    $stmt->execute();
+                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
                     if(!empty($result))
                     {
                         $new_cart_data = json_decode($result['cookie_value'], true);
-
+                        //var_dump($new_cart_data);
                         foreach($new_cart_data as $keys => $values)
                         {
                             if($values != $new_cart_data['item_Cookie_id'])
