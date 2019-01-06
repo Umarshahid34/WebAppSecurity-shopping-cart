@@ -68,8 +68,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                             // Store data in session variables
                             $_SESSION["logged_in"] = true;
                             $_SESSION["id_user"] = $user['user_id'];
-                           $_SESSION['start'] = time();
-                           $_SESSION['expire'] = $_SESSION['start'] + (30 * 60);
+                            $_SESSION['start'] = time();
+                            $_SESSION['expire'] = $_SESSION['start'] + (30 * 60);
                             $_SESSION["username"] = $username;
 
                             //Storing user info in the Cookie table
