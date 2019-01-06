@@ -1,166 +1,137 @@
 <?php
 // Include config file
-require_once "config.php";
+
+$connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "root");
+$connect->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 // Define variables and initialize with empty values
 $name = $username = $email = $address = $password = $confirm_password = "";
 $name_err =$username_err = $email_err = $address_err = $password_err = $confirm_password_err = "";
 
 // Processing form data when form is submitted
-if($_SERVER["REQUEST_METHOD"] == "POST"){
+if($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = trim($_POST["name"]);
     // Validate username
-    if(empty(trim($_POST["username"]))){
+    if (empty(trim($_POST["username"]))) {
         //var_dump($_POST);
         $username_err = "Please enter a username.";
-    } else{
+    } else {
         // Prepare a select statement
-        $sql = "SELECT user_id FROM users WHERE user_name = ?";
+        $sql = "SELECT user_id FROM users WHERE user_name = :username";
+        $statement = $connect->prepare($sql);
 
-        if($stmt = mysqli_prepare($link, $sql)){
-            // Bind variables to the prepared statement as parameters
-            mysqli_stmt_bind_param($stmt, "s", $param_username);
 
-            // Set parameters
-            $param_username = trim($_POST["username"]);
+        // Bind variables to the prepared statement as parameters
 
-            // Attempt to execute the prepared statement
-            if(mysqli_stmt_execute($stmt)){
-                /* store result */
-                mysqli_stmt_store_result($stmt);
+        $statement->bindParam(":username", $param_username);
 
-                if(mysqli_stmt_num_rows($stmt) == 1){
-                    $username_err = "This username is already taken.";
-                } else{
-                    $username = trim($_POST["username"]);
-                }
-            } else{
-                echo "Oops! Something went wrong. Please try again later.";
-            }
+        // Set parameters
+        $param_username = trim($_POST["username"]);
+
+        // Attempt to execute the prepared statement
+        $statement->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+              // Check if username exists, if yes then verify password
+        if($row['num'] > 0) {
+            $username_err = "This username is already taken.";
+        } else {
+            $username = trim($_POST["username"]);
         }
 
-        // Close statement
-        mysqli_stmt_close($stmt);
     }
+
+    // Close statement
+
 
     // Validate email
-    if(empty(trim($_POST["useremail"]))){
+    if (empty(trim($_POST["useremail"]))) {
         $email_err = "Please enter an email.";
-    } else{
+    } else {
         // Prepare a select statement
-        $sql = "SELECT user_id FROM users WHERE user_email = ?";
+        $sql = "SELECT user_id FROM users WHERE user_email = :email";
 
-        if($stmt = mysqli_prepare($link, $sql)){
-            // Bind variables to the prepared statement as parameters
-            mysqli_stmt_bind_param($stmt, "s", $param_email);
+        $statement = $connect->prepare($sql);
 
-            // Set parameters
-            $param_email = trim($_POST["useremail"]);
+        // Bind variables to the prepared statement as parameters
 
-            // Attempt to execute the prepared statement
-            if(mysqli_stmt_execute($stmt)){
-                /* store result */
-                mysqli_stmt_store_result($stmt);
+        $statement->bindParam(":email", $param_email);
+        // Set parameters
+        $param_email = trim($_POST["useremail"]);
 
-                if(mysqli_stmt_num_rows($stmt) == 1){
-                    $email_err = "This email is already taken.";
-                } else{
-                    $email = trim($_POST["useremail"]);
-                }
-            } else{
-                echo "Oops! Something went wrong. Please try again later.";
-            }
+        // Attempt to execute the prepared statement
+        $statement->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Check if username exists, if yes then verify password
+        if($row['num'] > 0) {
+            $email_err = "This email is already taken.";
+        } else {
+            $email = trim($_POST["useremail"]);
         }
 
-        // Close statement
-        mysqli_stmt_close($stmt);
     }
 
-    // Validate address
-    if(empty(trim($_POST["useraddress"]))){
-        $email_err = "Please enter an Address.";
-    } else{
-        // Prepare a select statement
-        $sql = "SELECT user_id FROM users WHERE user_address = ?";
 
-        if($stmt = mysqli_prepare($link, $sql)){
-            // Bind variables to the prepared statement as parameters
-            mysqli_stmt_bind_param($stmt, "s", $param_address);
-
-            // Set parameters
-            $param_address = trim($_POST["useraddress"]);
-
-            // Attempt to execute the prepared statement
-            if(mysqli_stmt_execute($stmt)){
-                /* store result */
-                mysqli_stmt_store_result($stmt);
-
-                if(mysqli_stmt_num_rows($stmt) == 1){
-                    $address_err = "This address is already stored.";
-                } else{
-                    $address = trim($_POST["useraddress"]);
-                }
-            } else{
-                echo "Oops! Something went wrong. Please try again later.";
-            }
-        }
-
-        // Close statement
-        mysqli_stmt_close($stmt);
-    }
 
     // Validate password
-    if(empty(trim($_POST["password"]))){
+    if (empty(trim($_POST["password"]))) {
         $password_err = "Please enter a password.";
-    } elseif(strlen(trim($_POST["password"])) < 6){
+    } elseif (strlen(trim($_POST["password"])) < 6) {
         $password_err = "Password must have atleast 6 characters.";
-    } else{
+    } else {
         $password = trim($_POST["password"]);
     }
 
     // Validate confirm password
-    if(empty(trim($_POST["re_password"]))){
+    if (empty(trim($_POST["re_password"]))) {
         $confirm_password_err = "Please confirm password.";
-    } else{
+    } else {
         $confirm_password = trim($_POST["re_password"]);
-        if(empty($password_err) && ($password != $confirm_password)){
+        if (empty($password_err) && ($password != $confirm_password)) {
             $confirm_password_err = "Password did not match.";
         }
     }
 
     // Check input errors before inserting in database
-    if(empty($username_err) && empty($email_err)&& empty($address_err) && empty($password_err) && empty($confirm_password_err)){
+    if (empty($username_err) && empty($email_err) && empty($address_err) && empty($password_err) && empty($confirm_password_err)) {
 
         // Prepare an insert statement
-        $sql = "INSERT INTO users (user_name,user_username, user_email, user_address, user_password) VALUES (?,?,?,?,?)";
+        $sql = "INSERT INTO users (user_name,user_username, user_email, user_address, user_password) VALUES (:uname,:username,:email,:address,:password)";
 
-        if($stmt = mysqli_prepare($link, $sql)){
-            // Bind variables to the prepared statement as parameters
-            mysqli_stmt_bind_param($stmt, "sssss", $_POST['name'] , $param_username, $param_email, $param_address,  $param_password);
+
+        $stmt = $connect->prepare($sql);
+
+            $stmt->bindParam(":uname",$_POST['name']);
+            $stmt->bindParam(":username",$param_username);
+            $stmt->bindParam(":email",$param_email);
+            $stmt->bindParam(":address",$param_address);
+            $stmt->bindParam(":password",$param_password);
+
+
 
             // Set parameters
             $param_username = $username;
             $param_email = $email;
-            $param_address= $address;
+            $param_address = $address;
             $param_password = password_hash($password, PASSWORD_DEFAULT); // Creates a password hash
             var_dump($stmt);
             // Attempt to execute the prepared statement
-            if(mysqli_stmt_execute($stmt)){
+
+
+        $result = $stmt->execute();
+        if ($result) {
                 // Redirect to login page
                 header("location: login.php");
-            } else{
+            } else {
                 echo "Something went wrong. Please try again later.";
             }
         }
 
-        // Close statement
-        mysqli_stmt_close($stmt);
-    }
+
 
     // Close connection
-    mysqli_close($link);
-}
 
+
+}
 include "views/includes/header.php";
 ?>
 

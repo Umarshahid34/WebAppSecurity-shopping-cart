@@ -1,12 +1,11 @@
 <?php
-
+try
+{
 $connect = new PDO("mysql:host=localhost;dbname=shopping_cart_db", "root", "root");
+$connect->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 // Initialize the session
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-    //var_dump ("aya");
-}
+
 
 if(isset($_SESSION["id_user"]))
 {
@@ -46,38 +45,32 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     // Validate credentials
     if(empty($username_err) && empty($password_err)){
         // Prepare a select statement
-        $sql = "SELECT user_id, user_username, user_password FROM users WHERE user_username = ?";
+        $sql = "SELECT user_id, user_username, user_password FROM users WHERE user_username = :username";
 
-        if($stmt = mysqli_prepare($link, $sql)){
-            // Bind variables to the prepared statement as parameters
-            mysqli_stmt_bind_param($stmt, "s", $param_username);
+       $statement = $connect->prepare($sql);
+       $statement->bindParam(":username",$username);
+       $statement->execute();
+        $user = $statement->fetch(PDO::FETCH_ASSOC);
 
-            // Set parameters
-            $param_username = $username;
 
-            // Attempt to execute the prepared statement
-            if(mysqli_stmt_execute($stmt)){
-                // Store result
-                mysqli_stmt_store_result($stmt);
 
-                // Check if username exists, if yes then verify password
-                if(mysqli_stmt_num_rows($stmt) == 1){
+                if($user)  {
                     echo"User found";
                     // Bind result variables
-                    mysqli_stmt_bind_result($stmt, $id, $username, $hashed_password);
-                    if(mysqli_stmt_fetch($stmt)){
-                        if(password_verify($password, $hashed_password)){
-                            echo "Password found";
-                            // Password is correct, so start a new session
-                            session_start();
 
+
+
+                    // Password is correct, so start a new session
+
+                       if (password_verify($_POST['password'], $user['user_password'])) {
+                            session_start();
+                           session_regenerate_id();
                             // Store data in session variables
                             $_SESSION["logged_in"] = true;
-                            $_SESSION["id_user"] = $id;
+                            $_SESSION["id_user"] = $user['user_id'];
+                           $_SESSION['start'] = time();
+                           $_SESSION['expire'] = $_SESSION['start'] + (30 * 60);
                             $_SESSION["username"] = $username;
-
-
-
 
                             //Storing user info in the Cookie table
                             if(isset($_COOKIE['shopping_cart']))
@@ -86,13 +79,13 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 		                        $cart_data = json_decode($cookie_data, true);
 		                        $cookie_id = $cart_data['item_Cookie_id'];
                                 $id = (int)$_SESSION["id_user"];
-                                var_dump($cart_data);
+                                //var_dump($cart_data);
 
 
-                                $query = "SELECT cookie_id from cookie WHERE id_user = '$id' ";
+                                $query = "SELECT cookie_id from cookie WHERE id_user = :id ";
                                 //var_dump($query);
                                 $statement = $connect->prepare($query);
-
+                                $statement->bindParam(":id",$id);
                                 $statement->execute();
                                 $result = $statement->fetchAll();
                                 //var_dump($result);
@@ -101,28 +94,37 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                                 {
                                     $_SESSION['cookie_id'] = $result[0]['cookie_id'];
                                     $cookie_id = $_SESSION['cookie_id'];
-                                    $query = "UPDATE cookie SET logged_In = 1 WHERE cookie_id = '$cookie_id' ";
+                                    $query = "UPDATE cookie SET logged_In = 1 WHERE cookie_id = :cookie_id ";
                                     //var_dump($query);
-                                    $connect->exec($query);
+                                    $statement = $connect->prepare($query);
+                                    $statement->bindParam(":cookie_id",$cookie_id);
+                                    $statement->execute();
+
                                 }
                                 else
                                 {
                                     $_SESSION['cookie_id'] = $cookie_id;
-                                    $query = "UPDATE cookie SET id_user = $id , logged_In = 1 WHERE cookie_id = '$cookie_id' ";
+                                    $query = "UPDATE cookie SET id_user = $id , logged_In = 1 WHERE cookie_id = :cookie_id ";
                                     /*$query = "INSERT INTO `cookie`(`cookie_id`, `cookie_value`, `id_user`, `logged_In`)
                                                 VALUES ('$cookie_id','$cookie_value', $id , 1 )";*/
                                     //var_dump($query);
-                                    $connect->exec($query);
+                                    $statement = $connect->prepare($query);
+                                    $statement->bindParam(":cookie_id",$cookie_id);
+                                    $statement->execute();
+
                                 }
 
 
 
                                 //creating and updating the cookie value if already in the basket
                                 $id = (int)$_SESSION["id_user"];
-                                $query = $connect->prepare( "SELECT cookie_value FROM cookie Where id_user = $id ");
-                               // var_dump($query);
-                                $query->execute();
-                                $result = $query->fetch(PDO::FETCH_ASSOC);
+                                $query = "SELECT cookie_value FROM cookie Where id_user = :id ";
+                                $statement = $connect->prepare($query);
+                                $statement->bindParam(":id",$id);
+                                $statement->execute();
+
+                                // var_dump($query);
+                                $result = $statement->fetch(PDO::FETCH_ASSOC);
                                 //var_dump($result['cookie_value']);
                                 $new_cart_data = json_decode($result['cookie_value'], true);
                                // var_dump($new_cart_data['item_Cookie_id']);
@@ -136,16 +138,18 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                                 //var_dump($_COOKIE['shopping_cart']);
 
                                  // Redirect user to Checkout page
-                                //header("location: CheckOut.php");
+                                header("location: CheckOut.php");
                             }
                             else
                             {
                                 //creating and updating the cookie value if already in the basket
                                 $id = (int)$_SESSION["id_user"];
-                                $query = $connect->prepare( "SELECT cookie_value FROM cookie Where id_user = $id ");
-                                var_dump($query);
-                                $query->execute();
-                                $result = $query->fetch(PDO::FETCH_ASSOC);
+                                $query = "SELECT cookie_value FROM cookie Where id_user = :id ";
+                                $statement = $connect->prepare($query);
+                                $statement->bindParam(":id",$id);
+                                $statement->execute();
+
+                                $result = $statement->fetch(PDO::FETCH_ASSOC);
                                 var_dump($result['cookie_id']);
                                 $_SESSION['cookie_id'] = $result['cookie_id'];
                                 $new_cart_data = json_decode($result['cookie_value'], true);
@@ -160,30 +164,15 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                                 // Redirect user to Home page
                                 header("location: index.php");
                             }
-                        } else{
-                            // Display an error message if password is not valid
-                            $password_err = "The password you entered was not valid.";
-                        }
-                    }
-                } else{
-                    // Display an error message if username doesn't exist
-                    $username_err = "No account found with that username.";
-                }
-            } else{
-                echo "Oops! Something went wrong. Please try again later.";
-            }
-        }else{
-            echo "No statement can be prepared";
-
-        // Close statement
-        mysqli_stmt_close($stmt);
-    }
-
-    // Close connection
-    mysqli_close($link);
-}else{
-echo "Username and password not validated";}}
-
+                        } else {
+			echo 'Incorrect username and/or password!';
+                    }}else{
+echo "Username does not exist";}}
+}}
+catch(PDOException $error)
+ {
+      $message = $error->getMessage();
+ }
 include "views/includes/header.php";
 ?>
 
